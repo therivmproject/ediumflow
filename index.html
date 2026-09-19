@@ -58,7 +58,7 @@ table{width:100%;border-collapse:collapse}th,td{text-align:left;padding:11px 8px
 <main>
 <div class="panel bar">
 <div class="cell" id="bot" title="Klik om de bot te pauzeren / hervatten"><svg class="i" viewBox="0 0 24 24"><rect x="4" y="8" width="16" height="11" rx="4"/><path d="M12 8V5M9 13v1.5M15 13v1.5"/><circle cx="12" cy="4" r="1"/></svg><i class="dot" id="dot"></i><div><small>BOT STATUS</small><b class="g" id="st">ACTIVE</b></div></div>
-<div class="cell"><svg class="i" viewBox="0 0 24 24"><path d="M3 17l6-6 4 4 7-8M15 7h5v5"/></svg><div><small>HUIDIGE STRATEGIE</small><b>Trend Following v2</b></div></div>
+<div class="cell"><svg class="i" viewBox="0 0 24 24"><path d="M3 17l6-6 4 4 7-8M15 7h5v5"/></svg><div><small>HUIDIGE STRATEGIE</small><b id="sn">…</b></div></div>
 <div class="cell"><svg class="i" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg><div><small>LAATSTE UPDATE</small><b id="lu"></b></div></div>
 <div class="cell"><svg class="i" viewBox="0 0 24 24" style="fill:currentColor;stroke:none"><rect x="4" y="14" width="4" height="6"/><rect x="10" y="9" width="4" height="11"/><rect x="16" y="3" width="4" height="17"/></svg><div><small>TOTALE WINST/VERLIES</small><b id="tp"></b></div></div>
 <div class="cell"><span class="bc">₿</span><div><small style="margin:0">BTC</small><b id="bp"></b> <span id="bch" style="font-size:12px;margin-left:6px"></span></div></div>
@@ -70,7 +70,7 @@ table{width:100%;border-collapse:collapse}th,td{text-align:left;padding:11px 8px
 <div class="cw"><div class="ov" style="top:12px" id="o1"></div><canvas id="c1"></canvas>
 <div style="position:relative"><div class="ov" style="top:6px" id="o2"></div><canvas id="c2"></canvas></div>
 <div style="position:relative"><div class="ov" style="top:6px" id="o3"></div><canvas id="c3"></canvas></div></div></div>
-<div class="panel cm"><header><svg class="i" viewBox="0 0 24 24" style="width:50px;height:50px;color:#c9d0da"><path d="M4 6c0-1 1-2 2-2h12c1 0 2 1 2 2v9c0 1-1 2-2 2h-7l-5 4v-4H6c-1 0-2-1-2-2z"/></svg><div><h3>BOT COMMENT SECTIE</h3><p class="d">Hier geeft bot live commentaar<br>over zijn trades</p><label style="display:block;margin-top:8px;font-size:12px;color:var(--m)">Kosten per transactie <select id="fee" style="background:#12161b;color:var(--t);border:1px solid var(--b);border-radius:6px;padding:3px 6px"><option value=".10">0,10% · Binance</option><option value=".25" selected>0,25% · gemiddeld</option><option value=".60">0,60% · Coinbase Adv.</option></select></label></div></header><div id="tl"></div></div>
+<div class="panel cm"><header><svg class="i" viewBox="0 0 24 24" style="width:50px;height:50px;color:#c9d0da"><path d="M4 6c0-1 1-2 2-2h12c1 0 2 1 2 2v9c0 1-1 2-2 2h-7l-5 4v-4H6c-1 0-2-1-2-2z"/></svg><div><h3>BOT COMMENT SECTIE</h3><p class="d">Hier geeft bot live commentaar<br>over zijn trades</p><label style="display:block;margin-top:8px;font-size:12px;color:var(--m)">Kosten per transactie <select id="fee" style="background:#12161b;color:var(--t);border:1px solid var(--b);border-radius:6px;padding:3px 6px"><option value=".10">0,10% · Binance</option><option value=".25" selected>0,25% · gemiddeld</option><option value=".60">0,60% · Coinbase Adv.</option></select></label><label style="display:block;margin-top:6px;font-size:12px;color:var(--m)">Strategie <select id="stm" style="background:#12161b;color:var(--t);border:1px solid var(--b);border-radius:6px;padding:3px 6px"><option value="auto" selected>Automatisch (beste bij regime)</option><option value="trend">Trend Following</option><option value="breakout">Momentum Breakout</option><option value="meanrev">Mean Reversion (range)</option><option value="squeeze">Volatility Squeeze</option></select></label><label style="display:block;margin-top:6px;font-size:12px;color:var(--m)">Richting <select id="dr" style="background:#12161b;color:var(--t);border:1px solid var(--b);border-radius:6px;padding:3px 6px"><option value="both" selected>Long + short</option><option value="long">Alleen long</option></select></label></div></header><div id="tl"></div></div>
 </section>
 
 <section id="v-performance" hidden style="display:grid;gap:20px"><div class="kp" id="kp"></div>
@@ -81,6 +81,8 @@ table{width:100%;border-collapse:collapse}th,td{text-align:left;padding:11px 8px
 <section id="v-updates" hidden><div class="panel pn"><h3 style="font-weight:400;letter-spacing:.08em;margin-bottom:18px">UPDATES</h3><ul>
 <li><b>v1.0</b> – Edium live paper trading: candlesticks, Bollinger Bands, SMA 20, EMA 50, RSI (14) en MACD (12,26,9).</li>
 <li><b>v1.0</b> – Trend Following strategie: instap bij EMA 9 &gt; EMA 21 met RSI-filter, uitstap bij trendkeer, take-profit of stop-loss.</li>
+<li><b>v1.5</b> – De bot kan nu ook short gaan op BTC/USD (schakelaar Richting: long + short of alleen long). Shorts gebruiken dezelfde kosten en slippage, zonder hefboom; financierings- of leenkosten zijn niet meegenomen.</li>
+<li><b>v1.4</b> – Strategiebibliotheek met automatische keuze: regimedetectie (ADX, Bollinger-breedte, 1u-trend) kiest Trend Following, Momentum Breakout, Mean Reversion of Volatility Squeeze, of wacht af. De actieve stijl staat bij Huidige Strategie; de backtest vergelijkt alle stijlen op het controledeel.</li>
 <li><b>v1.3</b> – Stabiele verbinding: automatische failover tussen Coinbase Advanced, Coinbase Exchange, Bitstamp, Bitfinex en Kraken (candles) en zeven bronnen voor de koers, met WebSocket en REST-backup. De bot handelt alleen op verse koersen.</li>
 <li><b>v1.2</b> – Coinbase Advanced Trade (publieke market-endpoints) met WebSocket, en een backtest met 70/30-splitsing, kosten en controle op curve fitting.</li>
 <li><b>v1.1</b> – Transactiekosten (kosten per zijde + 0,02% slippage) worden van elke trade afgetrokken; kies het kostenniveau in de commentaarsectie.</li>
@@ -105,23 +107,42 @@ for(let i=0;i<300;i++){const o=p;let h=o,l=o;for(let k=0;k<12;k++){g=g*.92+R()*.
 const k=price/p;a.forEach(c=>{c.o*=k;c.h*=k;c.l*=k;c.c*=k});return a}
 for(const k in TF)C[k]=hist(TF[k]);
 eq=1000;eqh=[1000,1000];
-let FEE=.25,SM=1.5,TM=2;const cost=()=>(FEE+.02)/100,mtm=()=>eq*(pos?price/pos.e*(1-cost()):1),atr=A=>ema(A.map((c,i)=>i?Math.max(c.h-c.l,Math.abs(c.h-A[i-1].c),Math.abs(c.l-A[i-1].c)):c.h-c.l),14);
-function pre(a,h){const cl=a.map(x=>x.c),e12=ema(cl,12),e26=ema(cl,26),md=e12.map((v,k)=>v-e26[k]),sg=ema(md,9),hc=h.map(x=>x.c);return{cl,e9:ema(cl,9),e21:ema(cl,21),r:rsi(cl),at:atr(a),hg:md.map((v,k)=>v-sg[k]),h20:ema(hc,20),h50:ema(hc,50),ht:h.map(x=>x.t)}}
+let FEE=.25,SM=1.5,TM=2,MODE='auto',curK=null;const cost=()=>(FEE+.02)/100,mtm=()=>eq*(pos?val(pos,price)*(1-cost()):1),atr=A=>ema(A.map((c,i)=>i?Math.max(c.h-c.l,Math.abs(c.h-A[i-1].c),Math.abs(c.l-A[i-1].c)):c.h-c.l),14);
+function pre(a,h){const cl=a.map(x=>x.c),e12=ema(cl,12),e26=ema(cl,26),md=e12.map((v,k)=>v-e26[k]),sg=ema(md,9),hc=h.map(x=>x.c);const B=bb(cl),bw=B.map(b=>b?(b[2]-b[0])/b[1]:1),bwp=bw.map((v,q)=>{if(q<40)return .5;let n=0,m=0;for(let z=Math.max(0,q-100);z<q;z++){m++;if(bw[z]<v)n++}return n/m});return{lo20:a.map((_,q)=>q<20?0:Math.min(...a.slice(q-20,q).map(x=>x.l))),bl:B.map(b=>b?b[0]:0),bm:B.map(b=>b?b[1]:1e9),bu:B.map(b=>b?b[2]:1e9),bwp,ad:adx(a),hi20:a.map((_,q)=>q<20?1e9:Math.max(...a.slice(q-20,q).map(x=>x.h))),cl,e9:ema(cl,9),e21:ema(cl,21),r:rsi(cl),at:atr(a),hg:md.map((v,k)=>v-sg[k]),h20:ema(hc,20),h50:ema(hc,50),ht:h.map(x=>x.t)}}
 const entryOK=(P,i,j,px,rt)=>P.h20[j]>P.h50[j]&&P.e9[i]>P.e21[i]&&P.cl[i]>P.e21[i]&&px>P.e21[i]&&P.r[i]>50&&P.r[i]<70&&P.hg[i]>0&&P.at[i]/px*300>=2*rt,
 exitWhy=(P,i)=>P.e9[i]<P.e21[i]&&P.cl[i]<P.e21[i]?'Trend gekeerd (EMA 9 onder EMA 21)':P.r[i]>82?'RSI oververhit':null;
-function open(at){const t={t:Date.now(),side:'BUY',p:price,fee:eq*cost()};pos={e:price,tr:t,eq0:eq,hi:price,at,stop:price-SM*at};eq-=t.fee;trades.unshift(t)}
-function close(why){const v=eq*price/pos.e,f=v*cost(),pl=((v-f)/pos.eq0-1)*100;eq=v-f;pos.tr.pl=pl;pos.tr.why=why;trades.unshift({t:Date.now(),side:'SELL',p:price,pl,why,fee:f});pos=null;cool=Date.now()+(pl<0?18e5:9e5)}
-function bot(){if(!feed())return;const a=C['15m'],P=pre(a,C['1h']),i=a.length-2,j=P.ht.length-2,rt=2*(FEE+.02);
-if(pos){pos.hi=Math.max(pos.hi,price);pos.stop=Math.max(pos.stop,pos.hi-TM*pos.at);if(pos.hi-pos.e>=1.5*pos.at)pos.stop=Math.max(pos.stop,pos.e*(1+rt/100));
-const w=price<=pos.stop?(pos.stop>=pos.e?'Trailing stop (winst veiliggesteld)':'Stop-loss geraakt'):exitWhy(P,i);if(w)close(w)}
-else if(!paused&&Date.now()>cool&&entryOK(P,i,j,price,rt))open(P.at[i])}
-function run(A,P,s,e,FE,sm,tm){const c=(FE+.02)/100,rt=2*(FE+.02);let eq=1e3,pos=null,T=[],pk=1e3,dd=0,j=0,cd=0;
-const fin=x=>{const v=eq*x/pos.e,f=v*c,pl=(v-f)/pos.eq0-1;eq=v-f;T.push(pl);pos=null;return pl};
+const adx=(A,n=14)=>{const o=A.map(()=>0);let tr=0,pd=0,md=0,dx=[],ax=0;
+for(let i=1;i<A.length;i++){const u=A[i].h-A[i-1].h,d=A[i-1].l-A[i].l,t=Math.max(A[i].h-A[i].l,Math.abs(A[i].h-A[i-1].c),Math.abs(A[i].l-A[i-1].c)),p=u>d&&u>0?u:0,m=d>u&&d>0?d:0;
+if(i<=n){tr+=t;pd+=p;md+=m}else{tr+=t-tr/n;pd+=p-pd/n;md+=m-md/n}
+if(i<n)continue;const pi=tr?100*pd/tr:0,mi=tr?100*md/tr:0,x=pi+mi?100*Math.abs(pi-mi)/(pi+mi):0;dx.push(x);ax=dx.length<=n?dx.reduce((s,v)=>s+v)/dx.length:(ax*(n-1)+x)/n;o[i]=dx.length>=n?ax:0}return o};
+let SHORT=true;
+const cg=(P,i,px,rt)=>P.at[i]/px*300>=2*rt,sq=(P,i)=>{for(let q=i;q>i-8&&q>=0;q--)if(P.bwp[q]<.2)return 1;return 0},al=(P,j,d)=>P.h20[j]*d>P.h50[j]*d,
+fav=(p,h,l)=>p.d>0?Math.max(p.hi,h):Math.min(p.hi,l),val=(p,x)=>Math.max(0,p.d>0?x/p.e:2-x/p.e),hit=(p,h,l)=>p.d>0?l<=p.stop:h>=p.stop,
+trail=(p,rt)=>{const d=p.d;p.stop=d>0?Math.max(p.stop,p.hi-p.tm*p.at):Math.min(p.stop,p.hi+p.tm*p.at);if((p.hi-p.e)*d>=1.5*p.at)p.stop=d>0?Math.max(p.stop,p.e*(1+rt/100)):Math.min(p.stop,p.e*(1-rt/100))};
+const SG={
+trend:{nm:'Trend Following',sm:1.5,tm:2,ent:(P,i,j,px,rt,d)=>al(P,j,d)&&P.e9[i]*d>P.e21[i]*d&&P.cl[i]*d>P.e21[i]*d&&px*d>P.e21[i]*d&&(d>0?P.r[i]>50&&P.r[i]<70:P.r[i]<50&&P.r[i]>30)&&P.hg[i]*d>0&&cg(P,i,px,rt),
+ ex:(P,i,d)=>P.e9[i]*d<P.e21[i]*d&&P.cl[i]*d<P.e21[i]*d?'Trend gekeerd (EMA 9 kruist EMA 21)':(d>0?P.r[i]>82:P.r[i]<18)?'RSI extreem':null},
+breakout:{nm:'Momentum Breakout',sm:1.5,tm:2.5,ent:(P,i,j,px,rt,d)=>(d>0?P.cl[i]>P.hi20[i]&&P.r[i]<75:P.cl[i]<P.lo20[i]&&P.r[i]>25)&&P.hg[i]*d>0&&al(P,j,d)&&cg(P,i,px,rt),
+ ex:(P,i,d)=>P.cl[i]*d<P.e21[i]*d?'Momentum weg (EMA 21)':(d>0?P.r[i]>85:P.r[i]<15)?'RSI extreem':null},
+meanrev:{nm:'Mean Reversion (range)',sm:1.2,tm:99,ent:(P,i,j,px,rt,d)=>d>0?P.cl[i]<P.bl[i]&&P.r[i]<32&&(P.bm[i]-px)/px*100>=2*rt:P.cl[i]>P.bu[i]&&P.r[i]>68&&(px-P.bm[i])/px*100>=2*rt,
+ ex:(P,i,d)=>P.cl[i]*d>=P.bm[i]*d?'Doel bereikt (Bollinger-midden)':(d>0?P.r[i]>60:P.r[i]<40)?'RSI hersteld':null},
+squeeze:{nm:'Volatility Squeeze',sm:1.5,tm:2,ent:(P,i,j,px,rt,d)=>(d>0?P.cl[i]>P.bu[i]:P.cl[i]<P.bl[i])&&P.hg[i]*d>0&&cg(P,i,px,rt),
+ ex:(P,i,d)=>P.cl[i]*d<P.bm[i]*d?'Terug door Bollinger-midden':null}};
+function pick(P,i,j){const ad=P.ad[i];if(ad>=25)return'trend';if(sq(P,i))return'squeeze';if(ad>=18)return'breakout';if(ad<20)return'meanrev';return null}
+const dirs=(K,P,j)=>{const r=K=='meanrev'||K=='squeeze'?[1,-1]:[P.h20[j]>P.h50[j]?1:-1];return SHORT?r:r.filter(d=>d>0)},
+tryEnt=(K,P,i,j,px,rt)=>{if(!K)return 0;for(const d of dirs(K,P,j))if(SG[K].ent(P,i,j,px,rt,d))return d;return 0};
+function open(at,k,d){const q=SG[k],t={t:Date.now(),side:'BUY',p:price,fee:eq*cost(),st:q.nm,d};pos={e:price,tr:t,eq0:eq,hi:price,at,stop:price-d*q.sm*at,k,tm:q.tm,d};eq-=t.fee;trades.unshift(t)}
+function close(why){const d=pos.d,v=eq*val(pos,price),f=v*cost(),pl=((v-f)/pos.eq0-1)*100;eq=v-f;pos.tr.pl=pl;pos.tr.why=why;trades.unshift({t:Date.now(),side:'SELL',p:price,pl,why,fee:f,d});pos=null;cool=Date.now()+(pl<0?18e5:9e5)}
+function bot(){if(!feed())return;const a=C['15m'],P=pre(a,C['1h']),i=a.length-2,j=P.ht.length-2,rt=2*(FEE+.02),K=MODE=='auto'?pick(P,i,j):MODE;curK=pos?pos.k:K;
+if(pos){pos.hi=fav(pos,price,price);trail(pos,rt);const w=hit(pos,price,price)?((pos.stop-pos.e)*pos.d>=0?'Trailing stop (winst veiliggesteld)':'Stop-loss geraakt'):SG[pos.k].ex(P,i,pos.d);if(w)close(w)}
+else if(!paused&&Date.now()>cool){const d=tryEnt(K,P,i,j,price,rt);if(d)open(P.at[i],K,d)}}
+function run(A,P,s,e,FE,mode,ov){const c=(FE+.02)/100,rt=2*(FE+.02);let eq=1e3,pos=null,T=[],pk=1e3,dd=0,j=0,cd=0;
+const fin=x=>{const v=eq*val(pos,x),f=v*c,pl=(v-f)/pos.eq0-1;eq=v-f;T.push(pl);pos=null;return pl};
 for(let k=s;k<e;k++){const i=k-1,o=A[k].o;while(j<P.ht.length-1&&P.ht[j+1]+36e5<=A[k].t)j++;
-if(pos){const w=exitWhy(P,i);let x=null;if(w)x=o;else if(A[k].l<=pos.stop)x=Math.min(o,pos.stop);
-if(x!=null){cd=k+(fin(x)<0?2:1)}else{pos.hi=Math.max(pos.hi,A[k].h);pos.stop=Math.max(pos.stop,pos.hi-tm*pos.at);if(pos.hi-pos.e>=1.5*pos.at)pos.stop=Math.max(pos.stop,pos.e*(1+rt/100))}}
-else if(k>=cd&&entryOK(P,i,j,o,rt)){const f=eq*c;pos={e:o,eq0:eq,hi:o,at:P.at[i],stop:o-sm*P.at[i]};eq-=f}
-const m=pos?eq*A[k].c/pos.e*(1-c):eq;pk=Math.max(pk,m);dd=Math.max(dd,1-m/pk)}
+if(pos){const w=SG[pos.k].ex(P,i,pos.d);let x=null;if(w)x=o;else if(hit(pos,A[k].h,A[k].l))x=pos.d>0?Math.min(o,pos.stop):Math.max(o,pos.stop);
+if(x!=null){cd=k+(fin(x)<0?2:1)}else{pos.hi=fav(pos,A[k].h,A[k].l);trail(pos,rt)}}
+else if(k>=cd){const K=mode=='auto'?pick(P,i,j):mode,d=tryEnt(K,P,i,j,o,rt);if(d){const q=K=='trend'&&ov?ov:SG[K],f=eq*c;pos={e:o,eq0:eq,hi:o,at:P.at[i],stop:o-d*q.sm*P.at[i],k:K,tm:q.tm,d};eq-=f}}
+const m=pos?eq*val(pos,A[k].c)*(1-c):eq;pk=Math.max(pk,m);dd=Math.max(dd,1-m/pk)}
 if(pos)fin(A[e-1].c);const w=T.filter(x=>x>0),gw=w.reduce((a,x)=>a+x,0),gl=-T.filter(x=>x<=0).reduce((a,x)=>a+x,0);
 return{n:T.length,win:T.length?w.length/T.length*100:0,pf:gl?gw/gl:(gw?99:0),ret:(eq/1e3-1)*100,dd:dd*100}}
 function tick(){prev=price;if(LIVE)price=lp;else{reg=reg*.98+R()*.2;price*=1+7e-5*(R()+reg*.4)}const n=Date.now();
@@ -144,7 +165,7 @@ x.beginPath();let st0=0;V.forEach((c,i)=>{const b=bs[o+i];if(b){st0?x.lineTo(X(i
 const ln=(arr,col)=>{x.beginPath();x.strokeStyle=col;x.lineWidth=1.2;let s=0;V.forEach((c,i)=>{const v=arr[o+i];if(v==null)return;s?x.lineTo(X(i),Y(v)):x.moveTo(X(i),Y(v));s=1});x.stroke()};
 ln(bs.map(b=>b&&b[0]),'rgba(120,140,220,.3)');ln(bs.map(b=>b&&b[2]),'rgba(120,140,220,.3)');ln(e50,'#5b7cfa');ln(s20,'#f2f4f7');
 V.forEach((c,i)=>{const u=c.c>=c.o;x.strokeStyle=x.fillStyle=u?'#2fd39a':'#ee4b60';x.beginPath();x.moveTo(X(i),Y(c.h));x.lineTo(X(i),Y(c.l));x.stroke();const a=Y(Math.max(c.o,c.c)),b=Y(Math.min(c.o,c.c));x.fillRect(X(i)-cw*.32,a,cw*.64,Math.max(1,b-a))});
-trades.forEach(t=>{if(t.t<V[0].t)return;const i=V.findIndex((c,j)=>c.t<=t.t&&(j==N-1||V[j+1].t>t.t)),b=t.side=='BUY',c=V[i],y=b?Y(c.l)+9:Y(c.h)-9,d=b?-1:1;x.fillStyle=b?'#2fd39a':'#ee4b60';x.beginPath();x.moveTo(X(i),y+4*d);x.lineTo(X(i)-4,y-4*d);x.lineTo(X(i)+4,y-4*d);x.fill()});
+trades.forEach(t=>{if(t.t<V[0].t)return;const i=V.findIndex((c,j)=>c.t<=t.t&&(j==N-1||V[j+1].t>t.t)),b=(t.side=='BUY')==(t.d>0),c=V[i],y=b?Y(c.l)+9:Y(c.h)-9,d=b?-1:1;x.fillStyle=b?'#2fd39a':'#ee4b60';x.beginPath();x.moveTo(X(i),y+4*d);x.lineTo(X(i)-4,y-4*d);x.lineTo(X(i)+4,y-4*d);x.fill()});
 const L=V[N-1],up=L.c>=L.o,y=Y(price);x.setLineDash([3,3]);x.strokeStyle=up?'#2fd39a':'#ee4b60';x.beginPath();x.moveTo(0,y);x.lineTo(pw,y);x.stroke();x.setLineDash([]);x.fillStyle=up?'#2fd39a':'#ee4b60';x.beginPath();x.roundRect(pw+2,y-11,pr-4,22,4);x.fill();x.fillStyle='#04140d';x.fillText(f2(price),pw+7,y+4);
 const cc=up?'g':'r';$('#o1').innerHTML=`<i>BTC/USD · ${tf}</i>O <span class=${cc}>${f2(L.o)}</span> H <span class=${cc}>${f2(L.h)}</span> L <span class=${cc}>${f2(L.l)}</span> C <span class=${cc}>${f2(L.c)}</span> <span class=${cc}>${(L.c-L.o>=0?'+':'')+f2(L.c-L.o)} (${sg((L.c/L.o-1)*100)})</span>`;
 [x,W,H]=cv('#c2',84);grid(x,H);const Yr=v=>6+(100-v)/100*(H-12);x.fillStyle='rgba(168,85,247,.06)';x.fillRect(0,Yr(70),pw,Yr(30)-Yr(70));x.setLineDash([4,4]);x.strokeStyle='rgba(255,255,255,.14)';x.fillStyle='#8a94a3';[70,50,30].forEach(v=>{x.beginPath();x.moveTo(0,Yr(v));x.lineTo(pw,Yr(v));x.stroke();x.fillText(v,pw+10,Yr(v)+4)});x.setLineDash([]);
@@ -158,13 +179,13 @@ $('#o3').innerHTML=`MACD (12,26,9) <span class=bl>${mc[e].toFixed(1)}</span> <sp
 function ui(){const d=new Date(),ch=(price/o24-1)*100,t=tot();
 $('#lu').textContent=`${d.getDate()} ${MN[d.getMonth()]} ${d.getFullYear()} ${hm(d)}`;$('#bp').textContent='$ '+f2(price);
 $('#bch').innerHTML=`<span class="${ch>=0?'g':'r'}">${ch>=0?'▲':'▼'} ${sg(ch)}</span>`;$('#tp').textContent=sg(t);$('#tp').className=t>=0?'g':'r';
-const wt=paused||!feed();$('#st').textContent=paused?'PAUSED':wt?'WACHT OP DATA':'ACTIVE';$('#st').style.color=wt?'#f5b942':'';$('#dot').style.background=wt?'#f5b942':'';
-$('#tl').innerHTML=!trades.length?'<p style="padding:20px 0;color:var(--m);line-height:1.5">Nog geen trades. Edium wacht op een trendsignaal.</p>':trades.slice(0,12).map(x=>{const b=x.side=='BUY',pl=x.pl!=null?x.pl:(pos&&pos.tr===x?(mtm()/pos.eq0-1)*100:0);
-return`<div class="tr" title="${x.why||''}"><span class="tm">${hm(x.t)}</span><i class="ic ${b?'up':'dn'}">${b?'↑':'↓'}</i><div><b class="${b?'g':'r'}">${x.side}</b><p>${b?'Long positie geopend':'Positie gesloten'}</p><small>BTC/USD @ ${f2(x.p)}${x.fee?' · kosten $'+x.fee.toFixed(2):''}</small></div><span class="pl ${pl>=0?'g':'r'}">${sg(pl)}</span></div>`}).join('')}
+const kk=pos?pos.k:curK;$('#sn').textContent=!feed()?'Wacht op data':kk?SG[kk].nm+(pos?(pos.d>0?' · LONG':' · SHORT'):''):'Afwachten';const wt=paused||!feed();$('#st').textContent=paused?'PAUSED':wt?'WACHT OP DATA':'ACTIVE';$('#st').style.color=wt?'#f5b942':'';$('#dot').style.background=wt?'#f5b942':'';
+$('#tl').innerHTML=!trades.length?'<p style="padding:20px 0;color:var(--m);line-height:1.5">Nog geen trades. Edium wacht op een trendsignaal.</p>':trades.slice(0,12).map(x=>{const op=x.side=='BUY',b=op==(x.d>0),pl=x.pl!=null?x.pl:(pos&&pos.tr===x?(mtm()/pos.eq0-1)*100:0);
+return`<div class="tr" title="${x.why||''}"><span class="tm">${hm(x.t)}</span><i class="ic ${b?'up':'dn'}">${b?'↑':'↓'}</i><div><b class="${b?'g':'r'}">${b?'BUY':'SELL'}</b><p>${op?(x.d>0?'Long':'Short')+' positie geopend'+(x.st?' · '+x.st:''):'Positie gesloten'}</p><small>BTC/USD @ ${f2(x.p)}${x.fee?' · kosten $'+x.fee.toFixed(2):''}</small></div><span class="pl ${pl>=0?'g':'r'}">${sg(pl)}</span></div>`}).join('')}
 function perf(){const cl=trades.filter(t=>t.side=='SELL'),w=cl.filter(t=>t.pl>0).length,av=cl.reduce((s,t)=>s+t.pl,0)/(cl.length||1);let pk=0,dd=0;eqh.forEach(v=>{pk=Math.max(pk,v);dd=Math.max(dd,(pk-v)/pk*100)});
 const e=mtm();$('#kp').innerHTML=[['Equity (paper)','$ '+f2(e)],['Totaal rendement',sg(tot())],['Win rate',(w/(cl.length||1)*100).toFixed(0)+'%'],['Gesloten trades',cl.length],['Gem. per trade',sg(av)],['Max drawdown','-'+dd.toFixed(2)+'%'],['Betaalde kosten','$ '+f2(trades.reduce((s,t)=>s+(t.fee||0),0))]].map(k=>`<div class="panel"><small>${k[0]}</small><b>${k[1]}</b></div>`).join('');
 const [x,W,H]=cv('#c4',240),lo=Math.min(...eqh),hi=Math.max(...eqh),Yq=v=>10+(hi-v)/(hi-lo||1)*(H-20);x.beginPath();eqh.forEach((v,i)=>{const px=i/(eqh.length-1)*(W-70);i?x.lineTo(px,Yq(v)):x.moveTo(px,Yq(v))});x.strokeStyle='#2fd39a';x.lineWidth=1.6;x.stroke();x.lineTo(W-70,H);x.lineTo(0,H);x.fillStyle='rgba(47,211,154,.08)';x.fill();x.fillStyle='#8a94a3';x.fillText('$'+hi.toFixed(0),W-62,16);x.fillText('$'+lo.toFixed(0),W-62,H-6);
-$('#tt').innerHTML='<tr><th>Tijd</th><th>Actie</th><th>Prijs</th><th>Resultaat</th><th>Reden</th><th>Kosten</th></tr>'+trades.map(t=>`<tr><td>${hm(t.t)}</td><td class="${t.side=='BUY'?'g':'r'}">${t.side}</td><td>${f2(t.p)}</td><td>${t.pl!=null?sg(t.pl):'open'}</td><td>${t.why||''}</td><td>${t.fee?'$ '+t.fee.toFixed(2):''}</td></tr>`).join('')}
+$('#tt').innerHTML='<tr><th>Tijd</th><th>Actie</th><th>Prijs</th><th>Resultaat</th><th>Reden</th><th>Kosten</th></tr>'+trades.map(t=>`<tr><td>${hm(t.t)}</td><td class="${(t.side=='BUY')==(t.d>0)?'g':'r'}">${(t.side=='BUY')==(t.d>0)?'BUY':'SELL'}${t.side=='BUY'?(t.d>0?' (long)':' (short)'):''}</td><td>${f2(t.p)}</td><td>${t.pl!=null?sg(t.pl):'open'}</td><td>${t.why||t.st||''}</td><td>${t.fee?'$ '+t.fee.toFixed(2):''}</td></tr>`).join('')}
 let LIVE=false,lp=price,ls=0,lm=0,odd=0,ws=null,wi=0,wl=0,busy=false,cn=0,pn='';
 const sleep=ms=>new Promise(r=>setTimeout(r,ms)),iso=s=>new Date(s*1e3).toISOString().slice(0,19)+'Z',feed=()=>LIVE&&Date.now()-lm<2e4;
 async function J(u){const r=await fetch(u,{signal:AbortSignal.timeout(7000)});if(!r.ok)throw new Error('HTTP '+r.status);const j=await r.json();if(j&&j.error&&j.error.length)throw new Error(String(j.error[0]));return j}
@@ -226,20 +247,22 @@ if(cov>=days*.9){A=a;H=h;us=s;break}if(!bp||cov>bp.cov)bp={a,h,s,cov};er.push(`$
 if(!A&&bp&&bp.a.length>=400){A=bp.a;H=bp.h;us=bp.s}
 if(!A){st.textContent='Backtest mislukt, geen bron bereikbaar: '+er.join(' · ');$('#bb').disabled=false;return}
 try{if(A.length<400)throw new Error('te weinig data');
-const P=pre(A,H),s0=60,cut=s0+Math.floor((A.length-s0)*.7);let best=null;
-for(const sm of[1,1.5,2])for(const tm of[1.5,2,3]){const r=run(A,P,s0,cut,FEE,sm,tm);if(!best||r.ret>best.r.ret)best={sm,tm,r}}
-const os=run(A,P,cut,A.length,FEE,best.sm,best.tm),bs=run(A,P,cut,A.length,FEE,1.5,2),bh=(A[A.length-1].c/A[cut].o-1)*100,nt=best.r.n+os.n,d=t=>new Date(t).toLocaleDateString('nl-NL'),
-row=(t,r)=>`<tr><td>${t}</td><td>${r.n}</td><td>${r.win.toFixed(0)}%</td><td>${r.pf.toFixed(2)}</td><td>${sg(r.ret)}</td><td>-${r.dd.toFixed(1)}%</td></tr>`,v=[];
-if(nt<100)v.push(`Slechts ${nt} trades in totaal (minder dan 100): geen statistische conclusie.`);
-if(best.r.ret>0&&(os.ret<=0||os.pf<1))v.push('Werkt niet op het controledeel: waarschijnlijk curve fitting.');
-v.push(os.ret>bh?'Op het controledeel beter dan kopen en houden.':'Op het controledeel niet beter dan kopen en houden.');
-out.innerHTML=`<table><tr><th>Deel</th><th>Trades</th><th>Win rate</th><th>Profit factor</th><th>Rendement</th><th>Max DD</th></tr>${row(`Afstellen ${d(A[s0].t)} – ${d(A[cut].t)} (stop ${best.sm}×ATR, trail ${best.tm}×ATR)`,best.r)}${row(`Controle ${d(A[cut].t)} – ${d(A[A.length-1].t)}, gekozen instelling`,os)}${row('Controle met standaard (1,5 / 2)',bs)}<tr><td>Kopen en houden (controle)</td><td>–</td><td>–</td><td>–</td><td>${sg(bh)}</td><td></td></tr></table><p style="margin-top:12px;line-height:1.6">${v.join('<br>')}</p><button class="btn" id="ap" style="margin-top:10px">Gebruik deze instelling live</button>`;
-$('#ap').onclick=()=>{SM=best.sm;TM=best.tm;$('#ap').textContent='Toegepast ✓'};
-st.textContent=`Klaar: ${A.length} candles van 15 min (bron ${us.n}, ${d(A[0].t)} – ${d(A[A.length-1].t)}), kosten ${(FEE+.02).toFixed(2)}% per zijde.`}catch(e){st.textContent='Backtest mislukt: '+(e&&e.message||e)}$('#bb').disabled=false}
+const P=pre(A,H),s0=60,cut=s0+Math.floor((A.length-s0)*.7),ks=['trend','breakout','meanrev','squeeze'];let best=null;
+for(const sm of[1,1.5,2])for(const tm of[1.5,2,3]){const r=run(A,P,s0,cut,FEE,'trend',{sm,tm});if(!best||r.ret>best.r.ret)best={sm,tm,r}}
+const ov={sm:best.sm,tm:best.tm},RS=ks.map(k=>({k,tu:run(A,P,s0,cut,FEE,k,ov),os:run(A,P,cut,A.length,FEE,k,ov)})),AU={k:'auto',tu:run(A,P,s0,cut,FEE,'auto',ov),os:run(A,P,cut,A.length,FEE,'auto',ov)},
+bh=(A[A.length-1].c/A[cut].o-1)*100,nt=AU.tu.n+AU.os.n,d=t=>new Date(t).toLocaleDateString('nl-NL'),
+row=x=>{const r=x.os;return`<tr><td>${x.k=='auto'?'<b>Automatisch (adaptief)</b>':SG[x.k].nm}</td><td>${x.tu.n}/${r.n}</td><td>${sg(x.tu.ret)}</td><td>${r.win.toFixed(0)}%</td><td>${r.pf.toFixed(2)}</td><td>${sg(r.ret)}</td><td>-${r.dd.toFixed(1)}%</td></tr>`},v=[],bs=RS.reduce((a,b)=>b.os.ret>a.os.ret?b:a);
+if(nt<100)v.push(`Slechts ${nt} trades bij de adaptieve bot (minder dan 100): geen statistische conclusie.`);
+if(AU.tu.ret>0&&(AU.os.ret<=0||AU.os.pf<1))v.push('Adaptief werkt niet op het controledeel: waarschijnlijk curve fitting.');
+v.push(AU.os.ret>=bs.os.ret?'Adaptief scoort op het controledeel beter dan elke losse strategie.':`Op het controledeel scoort ${SG[bs.k].nm} beter dan adaptief.`);
+v.push(AU.os.ret>bh?'Adaptief verslaat kopen en houden op het controledeel.':'Adaptief verslaat kopen en houden niet op het controledeel.');
+out.innerHTML=`<table><tr><th>Strategie</th><th>Trades (afstel/controle)</th><th>Afstellen</th><th>Win rate</th><th>Profit factor</th><th>Controle</th><th>Max DD</th></tr>${[...RS,AU].map(row).join('')}<tr><td>Kopen en houden</td><td>–</td><td>–</td><td>–</td><td>–</td><td>${sg(bh)}</td><td></td></tr></table><p style="margin:10px 0 0;color:var(--m)">Afstellen ${d(A[s0].t)} – ${d(A[cut].t)} · Controle ${d(A[cut].t)} – ${d(A[A.length-1].t)}. Win rate, profit factor, controle en max DD gelden voor het controledeel.</p><p style="margin-top:12px;line-height:1.6">${v.join('<br>')}</p><button class="btn" id="ap" style="margin-top:10px">Gebruik adaptief live</button>`;
+$('#ap').onclick=()=>{SG.trend.sm=best.sm;SG.trend.tm=best.tm;MODE='auto';$('#stm').value='auto';$('#ap').textContent='Toegepast ✓'};
+st.textContent=`Klaar (${SHORT?'long + short':'alleen long'}): ${A.length} candles van 15 min (bron ${us.n}, ${d(A[0].t)} – ${d(A[A.length-1].t)}), kosten ${(FEE+.02).toFixed(2)}% per zijde.`}catch(e){st.textContent='Backtest mislukt: '+(e&&e.message||e)}$('#bb').disabled=false}
 const step=()=>{tick();ui();if(view=='trading')draw();if(view=='performance')perf()};
 document.querySelectorAll('#nav button').forEach(b=>b.onclick=()=>{view=b.dataset.v;document.querySelectorAll('#nav button').forEach(x=>x.classList.toggle('on',x==b));['trading','performance','updates','about'].forEach(v=>{const s=$('#v-'+v);s.hidden=v!=view;if(v=='performance')s.style.display=v==view?'grid':'none'});step()});
 document.querySelectorAll('#tf button').forEach(b=>b.onclick=()=>{tf=b.textContent;document.querySelectorAll('#tf button').forEach(x=>x.classList.toggle('on',x==b));draw()});
-$('#bot').onclick=()=>{paused=!paused;ui()};$('#fee').onchange=e=>{FEE=+e.target.value};$('#bb').onclick=backtest;
-$('#cp').onclick=async()=>{const t=trades.map(t=>`${hm(t.t)} ${t.side} BTC/USD @ ${t.p.toFixed(2)}${t.pl!=null?' ('+sg(t.pl)+')':''}`).join('\n');try{await navigator.clipboard.writeText(t)}catch(e){const a=document.createElement('textarea');a.value=t;document.body.append(a);a.select();try{document.execCommand('copy')}catch(_){}a.remove()}$('#cp').textContent='Gekopieerd ✓';setTimeout(()=>$('#cp').textContent='Kopieer trades',1500)};
+$('#bot').onclick=()=>{paused=!paused;ui()};$('#fee').onchange=e=>{FEE=+e.target.value};$('#stm').onchange=e=>{MODE=e.target.value};$('#dr').onchange=e=>{SHORT=e.target.value=='both'};$('#bb').onclick=backtest;
+$('#cp').onclick=async()=>{const t=trades.map(t=>`${hm(t.t)} ${(t.side=='BUY')==(t.d>0)?'BUY':'SELL'} BTC/USD @ ${t.p.toFixed(2)}${t.pl!=null?' ('+sg(t.pl)+')':''}`).join('\n');try{await navigator.clipboard.writeText(t)}catch(e){const a=document.createElement('textarea');a.value=t;document.body.append(a);a.select();try{document.execCommand('copy')}catch(_){}a.remove()}$('#cp').textContent='Gekopieerd ✓';setTimeout(()=>$('#cp').textContent='Kopieer trades',1500)};
 addEventListener('resize',()=>view=='trading'?draw():0);$('#src').textContent='Verbinden…';ui();draw();setInterval(step,1000);connect();setInterval(src,2000);$('#src').onclick=e=>{if(e.target.id=='dg')$('#dgp').hidden=!$('#dgp').hidden};
 </script></body></html>
