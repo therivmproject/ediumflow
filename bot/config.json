@@ -1,0 +1,8 @@
+{
+  "assumptions": "Coinbase Advanced, spot, market (taker) orders, fee tier Advanced 1 (30-day volume $10K-$50K). Spot cannot short, so short is off.",
+  "fee": 0.4,
+  "tf": "1h",
+  "mode": "auto",
+  "short": false,
+  "gate": 1.5
+}

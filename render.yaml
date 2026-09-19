@@ -1,0 +1,6 @@
+services:
+  - type: web
+    name: edium-flow
+    runtime: static
+    buildCommand: echo "static site, no build step"
+    staticPublishPath: ./public
