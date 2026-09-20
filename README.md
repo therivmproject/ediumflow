@@ -96,7 +96,8 @@ npm start                # serve public/ on http://localhost:3000
 
 ## Troubleshooting
 
-- Track record says "Cannot load": the repository must be public and the bot must have run once (branch `data` must exist).
+- Track record asks for the repository: the page was opened somewhere other than your GitHub Pages address (for example from a file on your computer). Enter `OWNER/REPO` once (it is remembered) or open it as `track.html?repo=OWNER/REPO`. The Pages workflow fills in the repository automatically on GitHub Pages.
+- Track record says "No bot state found": the repository must be public and the workflow "Edium bot" must have run once (branch `data` must exist).
 - "STOPPED?" or "DELAYED": look at the Actions tab. Scheduled runs disappear during GitHub load, and are disabled after 60 days of inactivity (re-enable under Actions > Edium bot).
 - A failed run sends an email if GitHub notifications for Actions are on. The error is also shown on the track record page.
 - If all sources fail: exchange outage or blocked region. The next run retries automatically.

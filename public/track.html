@@ -29,8 +29,11 @@ input{background:var(--pn);color:var(--t);border:1px solid var(--b);border-radiu
 <h2>SETTINGS AND CHANGE LOG</h2><div id="cf" class="panel"></div>
 <p class="m" style="margin-top:24px">Paper trading on candle data of public exchanges. Fills at the next bar open with fee and 0.02% slippage per side; stops are checked against bar highs and lows. Results are simulated and not financial advice. GitHub caches the state file for a few minutes.</p>
 <script>
-const $=s=>document.querySelector(s),qs=new URLSearchParams(location.search);let repo=qs.get('repo');
-if(!repo&&/github\.io$/.test(location.hostname))repo=location.hostname.split('.')[0]+'/'+location.pathname.split('/')[1];
+const $=s=>document.querySelector(s),qs=new URLSearchParams(location.search),REPO0='__REPO__';
+const parseRepo=x=>{x=String(x||'').trim();const m=x.match(/github\.com\/([\w.-]+)\/([\w.-]+?)(?:\.git)?(?:[\/?#].*)?$/i)||x.match(/^([\w.-]+)\.github\.io\/([\w.-]+)/i)||x.match(/^([\w.-]+)\/([\w.-]+)$/);return m?m[1]+'/'+m[2]:null};
+const saved=()=>{try{return localStorage.getItem('ef_repo')}catch(_){return null}};
+// Order: ?repo=, the name injected by the GitHub Pages workflow, the github.io address, the repository remembered in this browser.
+let repo=parseRepo(qs.get('repo'))||(REPO0.slice(0,2)!=='__'?parseRepo(REPO0):null)||(/github\.io$/.test(location.hostname)?parseRepo(location.hostname.split('.')[0]+'/'+location.pathname.split('/')[1]):null)||parseRepo(saved());
 const f2=v=>v.toLocaleString('en-US',{minimumFractionDigits:2,maximumFractionDigits:2}),sg=v=>(v>=0?'+':'')+v.toFixed(2)+'%',cl=v=>v>=0?'g':'r',
 dt=t=>new Date(t).toISOString().slice(0,16).replace('T',' ')+' UTC',ago=ms=>{const m=Math.round(ms/6e4);return m<90?m+' min':m<2880?Math.round(m/60)+' h':Math.round(m/1440)+' days'};
 const px0=n=>'$'+Math.round(n).toLocaleString('en-US');
@@ -45,9 +48,14 @@ if(!p||!acc||!rk||!(p.action=='ENTER'||p.action=='HOLD')){$('#acr').innerHTML=''
 const ref=p.action=='ENTER'?p.ref:p.entry,dist=Math.abs(ref-p.stop)/ref*100,notional=Math.min(acc,acc*rk/dist),qty=notional/ref;
 $('#acr').innerHTML=`Position size for this risk: about <b>${px0(notional)}</b> (${qty.toFixed(4)} BTC), stop distance ${dist.toFixed(2)}%${notional>=acc?', capped at 100% of your account (no leverage)':''}. The paper account uses 100% of its equity per trade, so your result scales with your size.`}
 let S=null;
-async function load(){try{if(!repo)throw new Error('Unknown repository. Open this page as track.html?repo=OWNER/REPO');
-const r=await fetch('https://raw.githubusercontent.com/'+repo+'/data/state.json?t='+Math.floor(Date.now()/6e4));if(!r.ok)throw new Error('HTTP '+r.status+'. The repository must be public and the bot must have run at least once.');
-S=await r.json();render()}catch(e){$('#hl').innerHTML='<span class="r">Cannot load the track record: '+e.message+'</span>'}}
+function askRepo(msg){$('#hl').innerHTML=`<span class="a">${msg}</span><br><input id="rp" placeholder="OWNER/REPO or the GitHub URL" style="width:min(420px,90%);margin-top:8px"> <button id="rb">Connect</button>`;
+$('#rb').onclick=()=>{const r=parseRepo($('#rp').value);if(!r){$('#rp').value='';$('#rp').placeholder='Not recognised. Example: OWNER/REPO';return}repo=r;load()}}
+async function load(){if(document.activeElement&&document.activeElement.id==='rp')return;
+if(!repo)return askRepo('This page does not know which GitHub repository holds your bot. Enter it once, it is remembered in this browser.');
+try{const r=await fetch('https://raw.githubusercontent.com/'+repo+'/data/state.json?t='+Math.floor(Date.now()/6e4));if(r.status==404)throw new Error('NF');if(!r.ok)throw new Error('HTTP '+r.status);
+S=await r.json();try{localStorage.setItem('ef_repo',repo)}catch(_){}render()}
+catch(e){if(e.message=='NF')askRepo(`No bot state found in ${repo} (branch "data"). The repository must be public and the workflow "Edium bot" must have run once (Actions tab, Edium bot, Run workflow). If this is the wrong repository, enter the right one:`);
+else{$('#hl').innerHTML='<span class="r">Cannot load the track record: '+e.message+'</span> <a href="#" id="chg">change repository</a>';$('#chg').onclick=ev=>{ev.preventDefault();askRepo('Enter the repository:')}}}}
 function render(){const R=S.run||{},M=S.metrics||{},age=Date.now()-(R.lastOkRun||R.lastRun||0),ok=!R.lastError&&age<3e6,warn=age<54e5;
 $('#hl').innerHTML=`<span class="${ok?'g':warn?'a':'r'}">● ${ok?'RUNNING':warn?'DELAYED':'STOPPED?'}</span> · position <b class="${S.pos?(S.pos.d>0?'g':'r'):'m'}">${S.pos?(S.pos.d>0?'LONG':'SHORT'):'WAITING'}</b> · last successful run ${ago(age)} ago · data ${R.src||'-'} · runs ${R.runs||0}${R.lastError?' · <span class="r">last error: '+R.lastError+'</span>':''} · started ${dt(S.startedAt)}`;
 $('#acm').innerHTML=actionHTML();sizeCalc();const n=M.n||0,days=M.days||0;$('#tv').innerHTML=(S.cfg&&S.cfg.costs===false?'<div class="a"><b>COSTS IGNORED</b>: fees and slippage are switched off, so these results cannot be achieved in real trading.</div>':'')+`<b>${n}</b> closed trades of the <b>100</b> needed, running <b>${days.toFixed(1)}</b> days. Judge the bot only after at least 100 trades and several market phases (up, down, sideways). Keep the settings fixed during the trial.<br><span class="m">So far: net return ${sg(M.ret||0)} vs buy and hold ${sg(M.bh||0)}; profit factor ${(M.pf||0).toFixed(2)}${n<100?' (too early to conclude)':''}.</span>`;
