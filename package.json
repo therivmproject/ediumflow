@@ -1,13 +1,14 @@
 {
   "name": "edium-flow",
-  "version": "2.0.0",
+  "version": "2.3.0",
   "private": true,
   "description": "Edium Flow - BTC/USD paper trading dashboard (static site, no build step)",
   "scripts": {
     "start": "serve public -l ${PORT:-3000}",
     "dev": "serve public -l 3000",
     "bot": "node bot/run.js",
-    "test": "node bot/selftest.js"
+    "test": "node bot/selftest.js",
+    "doctor": "node bot/doctor.js"
   },
   "dependencies": {
     "serve": "^14.2.0"

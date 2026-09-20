@@ -36,18 +36,31 @@ if(now-last.t>Math.max(36e5,2*bar))throw new Error('stale data (last bar '+new D
 return{A:a,H:h,src:s.n}}catch(e){errs.push(s.n+': '+e.message)}}
 throw new Error('all data sources failed: '+errs.join(' | '))}
 const note=(S,t,x)=>{S.notes.unshift({t,x});if(S.notes.length>60)S.notes.pop()};
-async function main(){const cfg={...E.DEF,...JSON.parse(fs.readFileSync(path.join(__dirname,'config.json'),'utf8'))},file=process.env.STATE_FILE||path.join(process.cwd(),'data','state.json'),now=Date.now();
+function validateCfg(c){const e=[];if(!(c.fee>=0&&c.fee<=5))e.push('fee must be a number between 0 and 5 (percent per side)');
+if(!['15m','1h'].includes(c.tf))e.push('tf must be "15m" or "1h"');if(!['auto','trend','breakout','meanrev','squeeze'].includes(c.mode))e.push('mode must be auto, trend, breakout, meanrev or squeeze');
+if(typeof c.short!=='boolean')e.push('short must be true or false');if(typeof c.costs!=='boolean')e.push('costs must be true or false');if(!(c.gate>=.5&&c.gate<=5))e.push('gate must be a number between 0.5 and 5');return e}
+async function post(url,opt){try{const r=await fetch(url,{...opt,signal:AbortSignal.timeout(10000)});return r.ok}catch(e){return false}}
+const ntfy=m=>process.env.NTFY_TOPIC&&m?post('https://ntfy.sh/'+encodeURIComponent(process.env.NTFY_TOPIC),{method:'POST',body:m,headers:{Title:'Edium Flow'}}):0;
+const heartbeat=fail=>process.env.HEALTHCHECK_URL?post(process.env.HEALTHCHECK_URL.replace(/\/+$/,'')+(fail?'/fail':'')):0;
+function events(S,before){const m=[],px=n=>'$'+Math.round(n).toLocaleString('en-US');
+S.trades.slice(before.n).forEach(t=>m.push(`RESULT paper trade closed, ${t.dir} (${t.style}): ${t.pl>=0?'+':''}${t.pl.toFixed(2)}% after fees. ${t.why}. Entry ${px(t.entry)}, exit ${px(t.exit)}.`));
+return m}
+async function main(){const now=Date.now(),fail=async m=>{console.error(m);process.exitCode=1;await heartbeat(true)};let cfg;
+try{cfg={...E.DEF,...JSON.parse(fs.readFileSync(path.join(__dirname,'config.json'),'utf8'))}}catch(e){return fail('Cannot read bot/config.json: '+e.message)}
+const errs=validateCfg(cfg);if(errs.length)return fail('Invalid bot/config.json:\n - '+errs.join('\n - '));
+const file=process.env.STATE_FILE||path.join(process.cwd(),'data','state.json'),save=S=>{fs.writeFileSync(file+'.tmp',JSON.stringify(S));fs.renameSync(file+'.tmp',file)};
 fs.mkdirSync(path.dirname(file),{recursive:true});let S=fs.existsSync(file)?JSON.parse(fs.readFileSync(file,'utf8')):E.newState(cfg,now);
 const tf0=S.cfg.tf||'15m';
-if(tf0!==(cfg.tf||'15m')){const m='Timeframe changed from '+tf0+' to '+(cfg.tf||'15m')+'. Delete the data branch to start a new trial.';S.run={...S.run,lastRun:now,lastError:m};note(S,now,'ERROR: '+m);console.error(m);process.exitCode=1;fs.writeFileSync(file+'.tmp',JSON.stringify(S));fs.renameSync(file+'.tmp',file);return}
+if(tf0!==(cfg.tf||'15m')){const m='Timeframe changed from '+tf0+' to '+(cfg.tf||'15m')+'. Delete the data branch to start a new trial.';S.run={...S.run,lastRun:now,lastError:m};note(S,now,'ERROR: '+m);save(S);return fail(m)}
 if(JSON.stringify(S.cfg)!==JSON.stringify(cfg)){S.cfgLog.push({t:now,from:S.cfg,to:cfg});S.cfg=cfg;note(S,now,'SETTINGS CHANGED: '+JSON.stringify(cfg)+' (applies to new bars only)')}
+const before={n:S.trades.length,posT:S.pos&&S.pos.t},prevFails=S.run.failStreak||0;let ok=true,msgs=[];
 try{const{A,H,src}=await fetchWindow(now,cfg),r=E.processBars(S,A,H,now,cfg,src),px=A[A.length-1].c;
-if(r.init)note(S,now,'STARTED: paper account $1,000, start price $'+S.P0.toFixed(2)+', data from '+src);
+if(r.init)note(S,now,'STARTED: paper account $1,000, start price $'+S.P0.toFixed(2)+', data from '+src+(cfg.costs===false?'. COSTS ARE IGNORED (no fees, no slippage)':''));
 if(r.gap)note(S,now,'DATA GAP: '+r.gap+' bars could not be evaluated (bot was not running or the source had a hole)');
-note(S,now,E.statusNote(S,A,H,cfg,now));
-S.run={...S.run,lastRun:now,lastOkRun:now,src,runs:(S.run.runs||0)+1,lastError:null,lastPrice:px,lastBarT:S.lastT,newBars:r.bars};S.metrics=E.metrics(S,px,cfg);
+note(S,now,E.statusNote(S,A,H,cfg,now));const prevPlan=S.plan||null;S.plan=E.plan(S,A,H,now,cfg);msgs=[...E.signals(prevPlan,S.plan),...events(S,before)];if(r.init)msgs.push('STARTED: paper account $1,000 at BTC $'+Math.round(S.P0).toLocaleString('en-US')+'.'+(cfg.costs===false?' Costs are ignored.':''));if(prevFails>=3)msgs.push('RECOVERED: market data is reachable again.');
+S.run={...S.run,lastRun:now,lastOkRun:now,src,runs:(S.run.runs||0)+1,lastError:null,failStreak:0,lastPrice:px,lastBarT:S.lastT,newBars:r.bars};S.metrics=E.metrics(S,px,cfg);
 console.log('ok',src,'new bars',r.bars,'trades',S.trades.length,'equity',S.metrics.equity)}
-catch(e){S.run={...S.run,lastRun:now,lastError:String(e.message).slice(0,500)};note(S,now,'ERROR: '+e.message);console.error(e.message);process.exitCode=1}
-fs.writeFileSync(file+'.tmp',JSON.stringify(S));fs.renameSync(file+'.tmp',file)}
-module.exports={fetchWindow,main};
+catch(e){ok=false;S.run={...S.run,lastRun:now,lastError:String(e.message).slice(0,500),failStreak:prevFails+1};note(S,now,'ERROR: '+e.message);console.error(e.message);process.exitCode=S.run.failStreak===3?1:0;if(S.run.failStreak===3)msgs.push('ERROR: no market data for 3 runs in a row. '+String(e.message).slice(0,180))}
+save(S);await ntfy(msgs.join('\n'));await heartbeat(!ok)}
+module.exports={fetchWindow,main,validateCfg,events,SRC,pageC,agg4};
 if(require.main===module)main();

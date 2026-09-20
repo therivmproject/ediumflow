@@ -29,14 +29,16 @@ tryEnt=(K,P,i,j,px,rt)=>{if(!K)return 0;for(const d of dirs(K,P,j))if(SG[K].ent(
 // ===================== engine (server-side, deterministic, closed-candle based) =====================
 // Mirrors run() in public/index.html: decisions use the last closed bar (15m with 1h trend, or 1h with 4h trend, see cfg.tf), entries fill at the next bar open,
 // stops are checked against each bar's high/low (also on the entry bar). Costs: fee per side + 0.02% slippage.
-let BAR=9e5,CTX=36e5;const DEF={fee:.25,tf:'15m',mode:'auto',short:true,gate:1.5};
+let BAR=9e5,CTX=36e5;const DEF={fee:.25,costs:true,tf:'15m',mode:'auto',short:true,gate:1.5};
+// Cost per side in percent: fee + 0.02% slippage, or nothing at all when costs are switched off (pure signal test).
+const cp=c=>c.costs===false||!(c.fee>0)?0:c.fee+.02;
 function setCfg(c){SHORT=!!c.short;GATE=+c.gate;BAR=c.tf=='1h'?36e5:9e5;CTX=c.tf=='1h'?144e5:36e5;if(c.trend){SG.trend.sm=c.trend.sm;SG.trend.tm=c.trend.tm}}
 const jFor=(P,t)=>{let j=0;while(j<P.ht.length-1&&P.ht[j+1]+CTX<=t)j++;return j};
 const newState=(cfg,now)=>({v:1,startedAt:now,P0:null,eq:1e3,pos:null,cdT:0,lastT:null,trades:[],curve:[],notes:[],cfg,cfgLog:[],run:{}});
 function closeTrade(S,x,why,t,c){const p=S.pos,v=S.eq*val(p,x),f=v*c,pl=(v-f)/p.eq0-1;S.eq=v-f;
 S.trades.push({n:S.trades.length+1,dir:p.d>0?'long':'short',style:SG[p.k].nm,tOpen:p.t,tClose:t,entry:p.e,exit:x,pl:pl*100,fee:p.fee+f,why,src:p.src});
 S.pos=null;S.cdT=t+(pl<0?2:1)*BAR;return pl}
-function stepBar(S,A,P,k,cfg,src){const c=(cfg.fee+.02)/100,rt=2*(cfg.fee+.02),i=k-1,o=A[k].o,t=A[k].t,j=jFor(P,t);
+function stepBar(S,A,P,k,cfg,src){const c=cp(cfg)/100,rt=2*cp(cfg),i=k-1,o=A[k].o,t=A[k].t,j=jFor(P,t);
 if(S.pos){const p=S.pos,w=SG[p.k].ex(P,i,p.d);let x=null,why=w;
 if(w)x=o;else if(hit(p,A[k].h,A[k].l)){x=p.d>0?Math.min(o,p.stop):Math.max(o,p.stop);why=(p.stop-p.e)*p.d>=0?'Trailing stop (profit locked in)':'Stop-loss hit'}
 if(x!=null)closeTrade(S,x,why,t,c);else{p.hi=fav(p,A[k].h,A[k].l);trail(p,rt)}}
@@ -50,14 +52,29 @@ const L=cl[cl.length-1];if(S.lastT==null){S.lastT=L.t;S.P0=L.c;S.startedAt=now;S
 let first=cl.findIndex(x=>x.t>S.lastT);if(first<0)return{bars:0,gap:0};
 let gap=Math.max(0,Math.round((cl[first].t-S.lastT)/BAR)-1);if(first<80){gap+=80-first;first=80}
 const P=pre(cl,H);let n=0;for(let k=first;k<cl.length;k++){stepBar(S,cl,P,k,cfg,src);n++}S.lastT=L.t;return{bars:n,gap}}
-const equityNow=(S,px,cfg)=>S.pos?S.eq*val(S.pos,px)*(1-(cfg.fee+.02)/100):S.eq;
+// ---- signals for manual copying: what to do NOW, computed with exactly the decision logic that stepBar() will apply when the forming bar closes
+function plan(S,A,H,now,cfg){setCfg(cfg);const cl=A.filter(x=>x.t+BAR<=now),L=cl.length-1,P=pre(cl,H),nxt=cl[L].t+BAR,fb=A.find(x=>x.t===nxt),o=fb?fb.o:cl[L].c,px=A[A.length-1].c,j=jFor(P,nxt),rt=2*cp(cfg),at=P.at[L],
+base={barT:nxt,approx:!fb,ref:o,px,atr:at,t:now};
+if(S.pos){const p=S.pos,w=SG[p.k].ex(P,L,p.d);if(w)return{...base,action:'EXIT',dir:p.d,style:SG[p.k].nm,why:w,entry:p.e,stop:p.stop};
+return{...base,action:'HOLD',dir:p.d,style:SG[p.k].nm,entry:p.e,stop:p.stop,stopHit:!!fb&&hit(p,fb.h,fb.l),pl:(val(p,px)-1)*100}}
+if(nxt<S.cdT)return{...base,action:'WAIT',why:'cooldown after the last trade'};
+const K=cfg.mode=='auto'?pick(P,L,j):cfg.mode,d=tryEnt(K,P,L,j,o,rt);
+if(d){const q=SG[K],stop=o-d*q.sm*at,dev=(px/o-1)*d*100;return{...base,action:'ENTER',dir:d,style:q.nm,stop,dev,ok:dev<=.3*at/o*100&&!(d>0?px<=stop:px>=stop)}}
+return{...base,action:'WAIT',style:K?SG[K].nm:null,why:!K?'no clear market regime':'waiting for the '+SG[K].nm+' setup'}}
+function signals(prev,cur){const m=[],px=n=>'$'+Math.round(n).toLocaleString('en-US'),dn=d=>d>0?'LONG':'SHORT',same=!!prev&&prev.barT===cur.barT&&prev.action===cur.action&&prev.dir===cur.dir;
+if(cur.action=='ENTER'&&!same)m.push(`SIGNAL OPEN ${dn(cur.dir)} BTC/USD (${cur.style}). Paper entry ${px(cur.ref)}${cur.approx?' (estimated)':''}, now ${px(cur.px)} (${Math.abs(cur.dev).toFixed(2)}% ${cur.dev>=0?'worse':'better'} than the paper entry). Stop-loss ${px(cur.stop)} (${(Math.abs(cur.ref-cur.stop)/cur.ref*100).toFixed(2)}% away). ${cur.ok?'Entry still valid.':'Price already ran away: skip this one.'}`);
+if(cur.action=='EXIT'&&!same)m.push(`SIGNAL CLOSE ${dn(cur.dir)} at market now: ${cur.why}. Paper exit about ${px(cur.ref)}.`);
+if((cur.action=='HOLD')&&prev&&(prev.action=='HOLD'||prev.action=='ENTER')&&prev.dir===cur.dir&&Math.round(prev.stop)!==Math.round(cur.stop))m.push(`SIGNAL MOVE STOP on your ${dn(cur.dir)} to ${px(cur.stop)} (was ${px(prev.stop)}).`);
+if(cur.action=='HOLD'&&cur.stopHit&&!(prev&&prev.stopHit&&prev.barT===cur.barT))m.push(`SIGNAL STOP LEVEL ${px(cur.stop)} was touched on your ${dn(cur.dir)}. If your stop order filled you are out; the bot confirms at the bar close.`);
+return m}
+const equityNow=(S,px,cfg)=>S.pos?S.eq*val(S.pos,px)*(1-cp(cfg)/100):S.eq;
 function metrics(S,px,cfg){const T=S.trades,w=T.filter(x=>x.pl>0),gw=w.reduce((a,x)=>a+x.pl,0),gl=-T.filter(x=>x.pl<=0).reduce((a,x)=>a+x.pl,0);
 let pk=0,dd=0;S.curve.forEach(([,v])=>{pk=Math.max(pk,v);dd=Math.max(dd,(pk-v)/pk*100)});const e=equityNow(S,px,cfg);
 return{equity:+e.toFixed(2),ret:(e/1e3-1)*100,bh:S.P0?(px/S.P0-1)*100:0,n:T.length,win:T.length?w.length/T.length*100:0,pf:gl?gw/gl:(gw?99:0),avg:T.length?T.reduce((a,x)=>a+x.pl,0)/T.length:0,dd,fees:T.reduce((a,x)=>a+x.fee,0)+(S.pos?S.pos.fee:0),days:(Date.now()-S.startedAt)/864e5}}
 const XT={trend:'the trend reverses or RSI becomes extreme',breakout:'price moves back through EMA 21 or RSI becomes extreme',meanrev:'the Bollinger midline is reached or RSI recovers',squeeze:'price moves back through the Bollinger midline'};
-function statusNote(S,A,H,cfg,now){setCfg(cfg);const cl=A.filter(x=>x.t+BAR<=now),P=pre(cl,H),i=cl.length-1,j=jFor(P,now),px=A[A.length-1].c,up=P.h20[j]>P.h50[j],K=cfg.mode=='auto'?pick(P,i,j):cfg.mode,rt=2*(cfg.fee+.02),
+function statusNote(S,A,H,cfg,now){setCfg(cfg);const cl=A.filter(x=>x.t+BAR<=now),P=pre(cl,H),i=cl.length-1,j=jFor(P,now),px=A[A.length-1].c,up=P.h20[j]>P.h50[j],K=cfg.mode=='auto'?pick(P,i,j):cfg.mode,rt=2*cp(cfg),
 head=`BTC $${px.toFixed(0)} | 1h trend ${up?'up':'down'} | ADX ${P.ad[i].toFixed(0)} | RSI ${P.r[i].toFixed(0)} | ATR ${(P.at[i]/px*100).toFixed(2)}%`;
 if(S.pos){const p=S.pos,pl=(equityNow(S,px,cfg)/S.eq*1-1)*100;return`HOLDING ${p.d>0?'LONG':'SHORT'} (${SG[p.k].nm}) since ${new Date(p.t).toISOString().slice(0,16)}Z, entry $${p.e.toFixed(0)}, stop $${p.stop.toFixed(0)}. Exits when ${XT[p.k]}. | ${head}`}
 let why=!K?'no clear market regime':now<S.cdT?'cooldown after the last trade':`active style ${SG[K].nm}, waiting for its setup`+(K!='meanrev'&&!cg(P,i,px,rt)?` (expected move too small versus ${rt.toFixed(2)}% round-trip cost)`:'');
 return`WAITING: ${why}. | ${head}`}
-module.exports={DEF,newState,processBars,metrics,statusNote,equityNow,setCfg,closeTrade,pre,SG,pick,tryEnt,stepBar};
+module.exports={DEF,newState,processBars,metrics,statusNote,equityNow,plan,signals,setCfg,closeTrade,pre,SG,pick,tryEnt,stepBar};

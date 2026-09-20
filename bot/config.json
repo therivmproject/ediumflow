@@ -1,8 +1,9 @@
 {
-  "assumptions": "Coinbase Advanced, spot, market (taker) orders, fee tier Advanced 1 (30-day volume $10K-$50K). Spot cannot short, so short is off.",
+  "assumptions": "Fee 0.40% per side is the Coinbase Advanced spot taker tier 'Advanced 1'. Shorts are ON because signals are copied manually on a venue that supports shorting (futures, perpetuals or margin). Funding and borrow costs of shorts are not modeled. Check your venue's fees. Set \"costs\": false to ignore all fees and slippage (pure signal test, results are not achievable in practice).",
+  "costs": true,
   "fee": 0.4,
   "tf": "1h",
   "mode": "auto",
-  "short": false,
+  "short": true,
   "gate": 1.5
 }

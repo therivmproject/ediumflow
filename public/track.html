@@ -14,11 +14,13 @@ h1{font-size:18px;font-weight:500;letter-spacing:.08em;margin:0 0 4px}h2{font-si
 table{width:100%;border-collapse:collapse;font-size:13px}th,td{text-align:left;padding:7px 8px;border-bottom:1px solid var(--b);white-space:nowrap}th{color:var(--m);font-weight:400}
 .sc{overflow-x:auto}canvas{width:100%;height:240px;display:block}button{background:var(--pn);color:var(--t);border:1px solid var(--b);border-radius:8px;padding:6px 12px;cursor:pointer}
 .n{padding:8px 0;border-bottom:1px solid var(--b)}.n small{color:var(--m)}a{color:var(--g)}
+input{background:var(--pn);color:var(--t);border:1px solid var(--b);border-radius:6px;padding:4px 8px}
 </style>
 </head>
 <body>
 <h1>EDIUM FLOW · SERVER TRACK RECORD</h1>
 <div id="hl" class="m">Loading…</div>
+<h2>ACTION NOW (FOR COPYING)</h2><div id="ac" class="panel"><div id="acm">Loading…</div><div class="m" style="margin-top:12px">Your account size (USD) <input id="acc" type="number" min="0" step="100" style="width:110px"> Risk per trade <input id="rk" type="number" min="0.1" max="10" step="0.1" value="1" style="width:64px"> %<div id="acr" style="margin-top:6px"></div></div></div>
 <h2>STATUS OF THE TRIAL</h2><div id="tv" class="panel"></div>
 <h2>PERFORMANCE</h2><div id="kp" class="kp"></div>
 <h2>EQUITY CURVE (PAPER, $)</h2><div class="panel"><canvas id="cv"></canvas></div>
@@ -31,24 +33,35 @@ const $=s=>document.querySelector(s),qs=new URLSearchParams(location.search);let
 if(!repo&&/github\.io$/.test(location.hostname))repo=location.hostname.split('.')[0]+'/'+location.pathname.split('/')[1];
 const f2=v=>v.toLocaleString('en-US',{minimumFractionDigits:2,maximumFractionDigits:2}),sg=v=>(v>=0?'+':'')+v.toFixed(2)+'%',cl=v=>v>=0?'g':'r',
 dt=t=>new Date(t).toISOString().slice(0,16).replace('T',' ')+' UTC',ago=ms=>{const m=Math.round(ms/6e4);return m<90?m+' min':m<2880?Math.round(m/60)+' h':Math.round(m/1440)+' days'};
+const px0=n=>'$'+Math.round(n).toLocaleString('en-US');
+function actionHTML(){const p=S.plan;if(!p)return'<span class="m">No plan yet: the bot has not completed a run.</span>';
+const st=Date.now()-p.t>54e5?'<div class="a">This plan is '+ago(Date.now()-p.t)+' old. Check the bot status before acting.</div>':'',dn=p.dir>0?'LONG':'SHORT',c=p.dir>0?'g':'r',r=p.ref||p.entry,d=p.stop?Math.abs(r-p.stop)/r*100:0;
+if(p.action=='ENTER')return st+`<b class="${c}" style="font-size:20px">▶ OPEN ${dn}</b> <span class="m">${p.style}</span><br>Paper entry ${px0(p.ref)}${p.approx?' (estimated)':''} · now ${px0(p.px)} (${Math.abs(p.dev).toFixed(2)}% ${p.dev>=0?'worse':'better'} than the paper entry)<br>Stop-loss <b>${px0(p.stop)}</b> (${d.toFixed(2)}% away) · <b class="${p.ok?'g':'r'}">${p.ok?'entry still valid':'price ran away: skip this one'}</b>`;
+if(p.action=='EXIT')return st+`<b class="a" style="font-size:20px">■ CLOSE ${dn} NOW</b> <span class="m">${p.style}</span><br>${p.why} · paper exit about ${px0(p.ref)} · now ${px0(p.px)}`;
+if(p.action=='HOLD')return st+`<b class="${c}" style="font-size:20px">● HOLD ${dn}</b> <span class="m">${p.style}</span><br>Paper entry ${px0(p.entry)} · now ${px0(p.px)} · paper result <span class="${cl(p.pl)}">${sg(p.pl)}</span><br>Keep the stop-loss at <b>${px0(p.stop)}</b>. Move it when a MOVE STOP signal arrives.${p.stopHit?'<br><b class="a">The stop level was touched during this bar. Check whether your stop order filled.</b>':''}`;
+return st+`<b style="font-size:20px">○ NO POSITION</b><br><span class="m">${p.why}${p.style?' ('+p.style+')':''}</span>`}
+function sizeCalc(){const p=S&&S.plan,acc=+$('#acc').value,rk=+$('#rk').value;try{localStorage.setItem('ef_size',JSON.stringify({acc,rk}))}catch(_){}
+if(!p||!acc||!rk||!(p.action=='ENTER'||p.action=='HOLD')){$('#acr').innerHTML='';return}
+const ref=p.action=='ENTER'?p.ref:p.entry,dist=Math.abs(ref-p.stop)/ref*100,notional=Math.min(acc,acc*rk/dist),qty=notional/ref;
+$('#acr').innerHTML=`Position size for this risk: about <b>${px0(notional)}</b> (${qty.toFixed(4)} BTC), stop distance ${dist.toFixed(2)}%${notional>=acc?', capped at 100% of your account (no leverage)':''}. The paper account uses 100% of its equity per trade, so your result scales with your size.`}
 let S=null;
 async function load(){try{if(!repo)throw new Error('Unknown repository. Open this page as track.html?repo=OWNER/REPO');
 const r=await fetch('https://raw.githubusercontent.com/'+repo+'/data/state.json?t='+Math.floor(Date.now()/6e4));if(!r.ok)throw new Error('HTTP '+r.status+'. The repository must be public and the bot must have run at least once.');
 S=await r.json();render()}catch(e){$('#hl').innerHTML='<span class="r">Cannot load the track record: '+e.message+'</span>'}}
 function render(){const R=S.run||{},M=S.metrics||{},age=Date.now()-(R.lastOkRun||R.lastRun||0),ok=!R.lastError&&age<3e6,warn=age<54e5;
-$('#hl').innerHTML=`<span class="${ok?'g':warn?'a':'r'}">● ${ok?'RUNNING':warn?'DELAYED':'STOPPED?'}</span> · last successful run ${ago(age)} ago · data ${R.src||'-'} · runs ${R.runs||0}${R.lastError?' · <span class="r">last error: '+R.lastError+'</span>':''} · started ${dt(S.startedAt)}`;
-const n=M.n||0,days=M.days||0;$('#tv').innerHTML=`<b>${n}</b> closed trades of the <b>100</b> needed, running <b>${days.toFixed(1)}</b> days. Judge the bot only after at least 100 trades and several market phases (up, down, sideways). Keep the settings fixed during the trial.<br><span class="m">So far: net return ${sg(M.ret||0)} vs buy and hold ${sg(M.bh||0)}; profit factor ${(M.pf||0).toFixed(2)}${n<100?' (too early to conclude)':''}.</span>`;
+$('#hl').innerHTML=`<span class="${ok?'g':warn?'a':'r'}">● ${ok?'RUNNING':warn?'DELAYED':'STOPPED?'}</span> · position <b class="${S.pos?(S.pos.d>0?'g':'r'):'m'}">${S.pos?(S.pos.d>0?'LONG':'SHORT'):'WAITING'}</b> · last successful run ${ago(age)} ago · data ${R.src||'-'} · runs ${R.runs||0}${R.lastError?' · <span class="r">last error: '+R.lastError+'</span>':''} · started ${dt(S.startedAt)}`;
+$('#acm').innerHTML=actionHTML();sizeCalc();const n=M.n||0,days=M.days||0;$('#tv').innerHTML=(S.cfg&&S.cfg.costs===false?'<div class="a"><b>COSTS IGNORED</b>: fees and slippage are switched off, so these results cannot be achieved in real trading.</div>':'')+`<b>${n}</b> closed trades of the <b>100</b> needed, running <b>${days.toFixed(1)}</b> days. Judge the bot only after at least 100 trades and several market phases (up, down, sideways). Keep the settings fixed during the trial.<br><span class="m">So far: net return ${sg(M.ret||0)} vs buy and hold ${sg(M.bh||0)}; profit factor ${(M.pf||0).toFixed(2)}${n<100?' (too early to conclude)':''}.</span>`;
 const k=[['Equity','$ '+f2(M.equity||1e3)],['Return since start','<span class="'+cl(M.ret||0)+'">'+sg(M.ret||0)+'</span>'],['Buy and hold','<span class="'+cl(M.bh||0)+'">'+sg(M.bh||0)+'</span>'],['Closed trades',n],['Win rate',(M.win||0).toFixed(0)+'%'],['Profit factor',(M.pf||0).toFixed(2)],['Avg. per trade',sg(M.avg||0)],['Max drawdown','-'+(M.dd||0).toFixed(2)+'%'],['Fees paid','$ '+f2(M.fees||0)],['Days running',days.toFixed(1)]];
 $('#kp').innerHTML=k.map(x=>`<div class="panel"><small>${x[0]}</small><b>${x[1]}</b></div>`).join('');
 $('#nt').innerHTML=(S.pos?`<div class="n"><b class="${S.pos.d>0?'g':'r'}">OPEN ${S.pos.d>0?'LONG':'SHORT'}</b> · entry $${f2(S.pos.e)} at ${dt(S.pos.t)} · stop $${f2(S.pos.stop)}</div>`:'')+(S.notes||[]).slice(0,15).map(x=>`<div class="n"><small>${dt(x.t)}</small><br>${x.x.replace(/</g,'&lt;')}</div>`).join('');
 const T=(S.trades||[]).slice().reverse();$('#tt').innerHTML='<tr><th>#</th><th>Closed</th><th>Direction</th><th>Style</th><th>Entry</th><th>Exit</th><th>Result</th><th>Fees $</th><th>Reason</th></tr>'+T.slice(0,150).map(t=>`<tr><td>${t.n}</td><td>${dt(t.tClose)}</td><td class="${t.dir=='long'?'g':'r'}">${t.dir}</td><td>${t.style}</td><td>${f2(t.entry)}</td><td>${f2(t.exit)}</td><td class="${cl(t.pl)}">${sg(t.pl)}</td><td>${t.fee.toFixed(2)}</td><td>${t.why}</td></tr>`).join('');
-const c=S.cfg||{};$('#cf').innerHTML=`Entry timeframe ${c.tf||'15m'} · fee per side ${c.fee}% (+0.02% slippage) · strategy ${c.mode} · shorts ${c.short?'on':'off'} · cost filter ${c.gate}x`+((S.cfgLog||[]).length?'<br><span class="m">Changes: '+S.cfgLog.map(x=>dt(x.t)+' → '+JSON.stringify(x.to)).join('; ')+'</span>':'<br><span class="m">No changes since the start.</span>');draw()}
+const c=S.cfg||{};$('#cf').innerHTML=`Entry timeframe ${c.tf||'15m'} · ${c.costs===false?'costs ignored (no fees, no slippage)':'fee per side '+c.fee+'% (+0.02% slippage)'} · strategy ${c.mode} · shorts ${c.short?'on':'off'} · cost filter ${c.gate}x`+((S.cfgLog||[]).length?'<br><span class="m">Changes: '+S.cfgLog.map(x=>dt(x.t)+' → '+JSON.stringify(x.to)).join('; ')+'</span>':'<br><span class="m">No changes since the start.</span>');draw()}
 function draw(){const c=$('#cv'),d=devicePixelRatio||1,w=c.clientWidth,h=240;c.width=w*d;c.height=h*d;const x=c.getContext('2d');x.setTransform(d,0,0,d,0,0);x.clearRect(0,0,w,h);
 const P=(S&&S.curve)||[];if(P.length<2)return;const v=P.map(p=>p[1]),lo=Math.min(...v,1e3),hi=Math.max(...v,1e3),X=i=>i/(P.length-1)*(w-64),Y=y=>10+(hi-y)/(hi-lo||1)*(h-20),st=getComputedStyle(document.body);
 x.strokeStyle=st.getPropertyValue('--b');x.beginPath();x.moveTo(0,Y(1e3));x.lineTo(w-64,Y(1e3));x.stroke();x.beginPath();P.forEach((p,i)=>i?x.lineTo(X(i),Y(p[1])):x.moveTo(X(i),Y(p[1])));x.strokeStyle=st.getPropertyValue('--g');x.lineWidth=1.6;x.stroke();
 x.fillStyle=st.getPropertyValue('--m');x.font='12px sans-serif';x.fillText('$'+hi.toFixed(0),w-60,14);x.fillText('$'+lo.toFixed(0),w-60,h-6)}
 $('#dl').onclick=()=>{if(!S)return;const q=x=>'"'+String(x).replace(/"/g,'""')+'"',rows=[['n','closed_utc','direction','style','entry','exit','result_pct','fees_usd','reason'],...S.trades.map(t=>[t.n,new Date(t.tClose).toISOString(),t.dir,t.style,t.entry.toFixed(2),t.exit.toFixed(2),t.pl.toFixed(3),t.fee.toFixed(2),t.why])],a=document.createElement('a');a.href=URL.createObjectURL(new Blob([rows.map(r=>r.map(q).join(',')).join('\n')],{type:'text/csv'}));a.download='edium-server-trades.csv';a.click()};
-addEventListener('resize',()=>S&&draw());load();setInterval(load,6e4);
+try{const q=JSON.parse(localStorage.getItem('ef_size')||'null');if(q){$('#acc').value=q.acc||'';$('#rk').value=q.rk||1}}catch(_){}$('#acc').oninput=$('#rk').oninput=sizeCalc;addEventListener('resize',()=>S&&draw());load();setInterval(load,6e4);
 </script>
 </body>
 </html>
